@@ -15,7 +15,7 @@ join = os.path.join
 codeP = '/bcbl/home/home_g-m/glerma/soft/prf2d3d'
 baseP = '/bcbl/home/public/Gari'
 projP = 'MINI/prfAnalysis'
-pathMatlabFile = join(codeP, 'rmroicellOHBM.mat') 
+pathMatlabFile = join(codeP, 'DATA', 'rmroicellOHBM.mat') 
 ans = ['01','02']  # ,'03']
 # 01 is surface, 02 is orig volume analysis, 03 is resliced volume
 os.chdir(join(baseP, projP,'derivatives','prfanalyze-vista','analysis-03'))
