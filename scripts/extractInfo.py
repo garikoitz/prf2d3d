@@ -74,7 +74,7 @@ for ROII, ROI in enumerate(ROIS):
                             # "rawrss":ana._model["rawrss"],
                             # "rss":ana._model["rss"],
                             "ecc":ana.r,
-                            # "session":subject+an
+                            "session":subject+an,
                             }
             rmroicell[subjectI, ROII, anI] = createStruct
 savemat(pathMatlabFile, {"rmroiCell":rmroicell.tolist()})
