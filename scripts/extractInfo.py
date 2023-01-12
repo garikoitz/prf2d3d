@@ -12,7 +12,7 @@ import numpy as np
 join = os.path.join
 
 
-codeP = '/bcbl/home/home_g-m/glerma/soft/prfpreparetest'
+codeP = '/bcbl/home/home_g-m/glerma/soft/prf2d3d'
 baseP = '/bcbl/home/public/Gari'
 projP = 'MINI/prfAnalysis'
 pathMatlabFile = join(codeP, 'rmroicellOHBM.mat') 
