@@ -12,7 +12,7 @@ cr.dirs.FIGPNG  = fullfile(cr.dirs.FIG,'png');
 cr.dirs.FIGSVG  = fullfile(cr.dirs.FIG,'svg');
 cr.bk = bookKeeping(cr);
 
-% PRepare data and defaults
+% Prepare data and defaults
 load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
 
 list_subInds      = 1:28;
