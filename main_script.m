@@ -1,3 +1,4 @@
+%%
 clear all; close all;
 
 
@@ -31,9 +32,9 @@ cr.defaults.covfig.vfc.list_rmNames = list_rmNames;
 
 
 
-% Launch the function
-fname = 'CoverageBoot_varexp02_';%'Fig1_'; % '' for not saving
-% fname = ''; % 
+%% Launch the function
+% fname = 'CoverageBoot_varexp02_';%'Fig1_'; % '' for not saving
+fname = ''; % 
 [RF_mean, RF_individuals, empties] = figFunction_coverage_maxProfile_group(...
                                       cr,list_subInds, ...
                                       'flip',false, ...
@@ -53,7 +54,7 @@ fname = 'CoverageBoot_varexp02_';%'Fig1_'; % '' for not saving
 
 
 
-% PLOT THEM FOR V1, DO BOOTSTRAPPING AND AVERAGE IT
+%% PLOT THEM FOR V1, DO BOOTSTRAPPING AND AVERAGE IT
 for nr=1:3
     ALL2d=RF_individuals{nr,1};
     ALL3d=RF_individuals{nr,2};
@@ -126,71 +127,34 @@ for nr=1:3
     saveas(gcf, fullfile(cr.dirs.FIGPNG, [fname '.png']), 'png')
     saveas(gcf, fullfile(cr.dirs.FIGSVG,[fname '.svg']), 'svg')
 end
+%% Individual plots
+for nr=1:3
+    ALL2d=RF_individuals{nr,1};
+    ALL3d=RF_individuals{nr,2};
 
-
-% PLOT
-mrvNewGraphWin('NObootstraps2d3dFOV','wide',true);
-subplot(1,2,1)
-imagesc(Cd);axis equal;colormap(parula);colorbar;grid
-title("d': mean 50 bootstraps [2D-3D]")
-xlim([1,128]);ylim([1,128])
-xticks([1,64,128]); yticks([1,64,128])
-% caxis([-1.25,1.25])
-caxis([0,2])
-xticklabels([-15,0,15]); yticklabels([-15,0,15])
-xlabel('Degs'); ylabel('Degs')
-
-% subplot(1,2,2)
-subplot(1,2,2)
-[X,Y] = meshgrid(1:128,1:128);
-XX = ((X-64)/64)*15;
-YY = ((Y-64)/64)*15;
-YY = flipud(YY);
-surf(XX,YY,Cd);
-xlabel('X (degs)'); ylabel('Y (degs)')
-zlabel("Cohen's d")
-xlim([-15,15])
-ylim([-15,15])
-zlim([0,2])
-xticks([-15,-10,-5,0,5,10,15])
-yticks([-15,-10,-5,0,5,10,15])
-xticklabels({'-15','-10','-5','0','5','10','15'})
-yticklabels({''})
-set(gca,'FontSize',18)
-
-fname = 'FOV_Comparisons_2dvs3d_vfc.method_max_varexp025_NOboots';
-set(0, 'DefaultFigureRenderer', 'painters');
-saveas(gcf, fullfile(cr.dirs.FIGPNG, [fname '.png']), 'png')
-saveas(gcf, fullfile(cr.dirs.FIGSVG,[fname '.svg']), 'svg')
-
-
-
-
-
-% Individual plots
-    mrvNewGraphWin('CrossVal2dvs3dFOV','wide',true);
-    ha = tight_subplot(2,size(ALL3d,3)/2,[.01 .03],[.1 .01],[.01 .01]);
-   subnames = 1:size(ALL3d,3);
-   ve = 0.25;
+    mrvNewGraphWin('CrossVal2dvs3dFOV');
+    ha = tight_subplot(4,size(ALL3d,3)/4,[.03 .03],[.1 .01],[.01 .01]);
+    subnames = 1:size(ALL3d,3);
+    ve = 0.25;
     for nn=1:size(ALL2d,3)
-        ieng = ALL2d(:,:,nn);
-        iheb = ALL3d(:,:,nn);
+        all2d = ALL2d(:,:,nn);
+        all3d = ALL3d(:,:,nn);
         axes(ha(nn));
-        imagesc(ieng-iheb);axis equal;colormap(jet);colorbar;grid
-        caxis([-.5,1.5])
+        imagesc(all2d-all3d);axis equal;colormap(jet);colorbar;grid
+        caxis([-.1,.1])
         % title(sprintf('Sub ind %i',nn))
-        title(subnames(nn))
+        title(['ROI-' list_roiNames{nr} '_sub-' num2str(subnames(nn))])
         xlim([1,128]);ylim([1,128])
         xticks([1,64,128]); yticks([1,64,128])
-        xticklabels([-15,0,15]); yticklabels([-15,0,15])
-
+        xticklabels([-xdeg,0,xdeg]); yticklabels([-ydeg,0,ydeg])
+    
     end
     
     ha    = xlabel('Degs');
     ha(1) = ylabel('Degs');
-    titlefile  = ['IndividualSubject2d-3d-' num2str(size(ALL2d,3)) ...
-                                                     'subs-VE' num2str(100*ve)];
+    titlefile  = ['IndividualSubject2d-3d_ROI-' list_roiNames{nr} ...
+        '_N-' num2str(size(ALL2d,3)) '_VE-' num2str(100*ve) ];
     saveas(gcf, fullfile(cr.dirs.FIGPNG,[titlefile '.png']), 'png')
     saveas(gcf, fullfile(cr.dirs.FIGSVG,[titlefile '.svg']), 'svg')
-    % saveas(gcf, fullfile(crRP,'DATA','figures','png',[titlefile '.png']), 'png') 
-    close all
+end
+close all
