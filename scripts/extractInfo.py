@@ -11,11 +11,11 @@ import numpy as np
 
 join = os.path.join
 
-
+#%% for BCBL volume - surface comparison
 codeP = '/bcbl/home/home_g-m/glerma/soft/prf2d3d'
 baseP = '/bcbl/home/public/Gari'
 projP = 'MINI/prfAnalysis'
-pathMatlabFile = join(codeP, 'DATA', 'rmroicellOHBM.mat') 
+pathMatlabFile = join(codeP, 'DATA', 'rmroicellOHBM.mat')
 ans = ['01','02']  # ,'03']
 # 01 is surface, 02 is orig volume analysis, 03 is resliced volume
 os.chdir(join(baseP, projP,'derivatives','prfanalyze-vista','analysis-03'))
@@ -62,7 +62,7 @@ for ROII, ROI in enumerate(ROIS):
 
             # Create rmroiCell.mat
             # dim1: subjects, dim2: rois, dim3: dataType (words, checkers...)
-            createStruct=  {"x0":ana.x, 
+            createStruct=  {"x0":ana.x,
                             "y0":ana.y,
                             "co":ana.varexp,
                             "name":ROI,
@@ -80,3 +80,61 @@ for ROII, ROI in enumerate(ROIS):
 savemat(pathMatlabFile, {"rmroiCell":rmroicell.tolist()})
 
 
+#%% for VIE retcomp17 high - low res
+codeP = '/local/dlinhardt/develop/prf2d3d'
+baseP = '/ceph/mri.meduniwien.ac.at/projects/physics/fmri/data'
+projP = 'retcomp17BIDS'
+pathMatlabFile = join(codeP, 'DATA', 'rmroicell_HRLR.mat')
+ans = ['02']
+# 01 is resliced to anatomy space, 02 is individual space
+subjects = sorted(glob.glob(join(baseP, projP,'derivatives','prfanalyze-vista','analysis-02','sub*')))
+subjects = [os.path.basename(a) for a in subjects]
+
+# S045 does not exist, remove it
+subjects.pop(8)
+subjects.pop(1)
+
+sessions = ['ses-001']
+tasks = ['barHR','barLR']
+runs = ['0102avg','01','02']
+varExps = [.2,.1,.05]
+ROIS = ['V1','V2','V3']
+
+an = ans[0]
+session = sessions[0]
+run = runs[0]
+varExp = varExps[1]
+
+# initialice
+rmroicell = np.empty((len(subjects),len(ROIS),len(tasks)), dtype=object)
+
+for ROII, ROI in enumerate(ROIS):
+    for subjectI, subject in enumerate(subjects):
+        for taskI, task in enumerate(tasks):
+            ana = PRF.from_docker(projP,
+                                  subject,
+                                  session,
+                                  task,
+                                  run,
+                                  baseP=baseP,
+                                  analysis=an)
+            ana.maskROI(ROI)
+
+            # Create rmroiCell.mat
+            # dim1: subjects, dim2: rois, dim3: dataType (words, checkers...)
+            createStruct=  {"x0":ana.x,
+                            "y0":ana.y,
+                            "co":ana.varexp,
+                            "name":ROI,
+                            "sigma1":ana.s,
+                            "sigma2":ana.s,
+                            "vt":"Gray",
+                            "sigma":ana.s,
+                            "polar":ana.pol,
+                            # "rawrss":ana._model["rawrss"],
+                            # "rss":ana._model["rss"],
+                            "ecc":ana.r,
+                            "session":subject+an,
+                            }
+            rmroicell[subjectI, ROII, taskI] = createStruct
+savemat(pathMatlabFile, {"rmroiCell":rmroicell.tolist()})
