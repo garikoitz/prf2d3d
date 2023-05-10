@@ -17,9 +17,11 @@ cr.dirs.FIGSVG  = fullfile(cr.dirs.FIG,'svg');
 cr.bk = bookKeeping(cr);
 
 % Prepare data and defaults
-load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
+% load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
+% load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
+load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_new.mat'))
 
-list_subInds      = 1:28;
+list_subInds      = 1:30;
 list_roiNames     = {'V1','V2','V3'};
 list_rmDescripts  = {'2D','3D'};
 list_dtNames      = {'2D','3D'};
