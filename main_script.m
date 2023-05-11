@@ -21,7 +21,7 @@ cr.bk = bookKeeping(cr);
 % load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
 load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_new.mat'))
 
-list_subInds      = 1:30;
+list_subInds      = 1:size(rmroiCell,1);
 list_roiNames     = {'V1','V2','V3'};
 list_rmDescripts  = {'2D','3D'};
 list_dtNames      = {'2D','3D'};
@@ -95,13 +95,22 @@ for nr=1:3
     stdval = mean(SVALS,3);
     Cd     = mean(DVALS,3);
     
+    % Create color map that goes through 0
+    LR = 200;
+    LB = 100;
+    red  = [1, 0, 0];
+    white = [1,1,1];
+    blue = [0, 0, 1];
+    colors_bw = [linspace(blue(1),white(1),LB)', linspace(blue(2),white(2),LB)', linspace(blue(3), white(3),LB)'];
+    colors_wr = [linspace(white(1),red(1),LR)', linspace(white(2),red(2),LR)', linspace(white(3), red(3),LR)'];
+    colors_p = [colors_bw; colors_wr];
     
     % PLOT
     xdeg = 8; ydeg = 8;
     mrvNewGraphWin('bootstraps2d3dFOV','wide',true);
     subplot(1,2,1)
-    imagesc(Cd);axis equal;colormap(parula);colorbar;grid
-    title("d': mean 50 bootstraps [2D-3D]")
+    imagesc(Cd);axis equal;colormap(colors_p);colorbar;grid
+    title([list_roiNames{nr} char(". d': mean 50 bootstraps [2D-3D]")])
     xlim([1,128]);ylim([1,128])
     xticks([1,64,128]); yticks([1,64,128])
     % caxis([-1.25,1.25])
