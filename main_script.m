@@ -1,6 +1,3 @@
-
-% TODO meeting 9th: (1) paste figures and discuss layout, (2) discuss how to visualize and compare time series to explain the results
-
 %%
 clear all; close all;
 
@@ -19,7 +16,8 @@ cr.bk = bookKeeping(cr);
 % Prepare data and defaults
 % load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
 % load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
-load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_new.mat'))
+% load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_new.mat'))
+load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_models'))
 
 list_subInds      = 1:size(rmroiCell,1);
 list_roiNames     = {'V1','V2','V3'};
