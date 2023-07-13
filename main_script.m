@@ -3,7 +3,8 @@ clear all; close all;
 
 PLOT R2
 
-an = '2d3d';
+% an = '2d3d';
+an = '2d3dmodel';
 % an = 'hrlr';
 
 cr         = struct();
@@ -17,17 +18,14 @@ cr.dirs.FIGSVG  = fullfile(cr.dirs.FIG,'svg');
 cr.bk = bookKeeping(cr);
 
 
-% Prepare data and defaults
-% load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
-% load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
-% load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_new.mat'))
-load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_models'))
+
 
 
 
 switch an
     case '2d3d'
         % Prepare data and defaults
+        % load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
         load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_new.mat')) % This is in the abstract
         
         list_subInds      = 1:size(rmroiCell,1);
@@ -37,8 +35,25 @@ switch an
         list_rmDescripts  = {'2D','3D'};
         list_dtNames      = {'2D','3D'};
         list_rmNames      = {'2D','3D'};
-        titlestring       = '2D - 3D-NN';
-        fnamestring       = '2Dvs3D-NN';
+        titlestring       = '2D - 3D';
+        fnamestring       = '2Dvs3D';
+        zlimbyan          = [-1,2];
+        varexp = 0.2;
+
+
+    case '2d3dmodel'
+        % Prepare data and defaults
+        load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_models'))
+        
+        list_subInds      = 1:size(rmroiCell,1);
+        % after seeing indiv plots removed 25 and 26
+        % list_subInds      = [1:24,27:28]; 
+        list_roiNames     = {'V1','V2','V3'};
+        list_rmDescripts  = {'2D','3D'};
+        list_dtNames      = {'2D','3D'};
+        list_rmNames      = {'2D','3D'};
+        titlestring       = '2D - 3D-model';
+        fnamestring       = '2Dvs3D-model';
         zlimbyan          = [-1,2];
         varexp = 0.5;
 
