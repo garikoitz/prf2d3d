@@ -1,8 +1,6 @@
 %%
 clear all; close all;
 
-PLOT R2
-
 % an = '2d3d';
 an = '2d3dmodel';
 % an = 'hrlr';
@@ -54,7 +52,7 @@ switch an
         list_rmNames      = {'2D','3D'};
         titlestring       = '2D - 3D-model';
         fnamestring       = '2Dvs3D-model';
-        zlimbyan          = [-1,2];
+        zlimbyan          = [-1,6];
         varexp = 0.5;
 
     case 'hrlr'
@@ -115,7 +113,8 @@ fname = ''; %
                                       'invisible',true);
 
 
-
+% RF_mean_model = RF_mean;
+% RF_individuals_model = RF_individuals;
 %% PLOT THEM FOR V1-3, DO BOOTSTRAPPING AND AVERAGE IT
 for nr=1:3
     ALL2d=RF_individuals{nr,1};
