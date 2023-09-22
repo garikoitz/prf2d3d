@@ -20,7 +20,8 @@ clear all; close all; clc;
 % an = 'hrlr';
 % an = 'upsample'; % upsample voxels from 2iso to 1iso to see if goes foveal due to the curve
 
-an_types = {'upsample', '2d3d', '2d3dmodel', 'number_vox'};
+an_types = {'2d3d','2d3dmodel','number_vox2d2d','number_vox2d3d','upsample'};
+an_types = {'number_vox2d3d'};
 recalculate = false;
 
 for na=1:length(an_types)
@@ -36,11 +37,6 @@ for na=1:length(an_types)
     cr.dirs.FIGPNG  = fullfile(cr.dirs.FIG,'png');
     cr.dirs.FIGSVG  = fullfile(cr.dirs.FIG,'svg');
     cr.bk = bookKeeping(cr);
-    
-    
-    
-    
-    
     
     switch an
         case '2d3d'
@@ -114,7 +110,7 @@ for na=1:length(an_types)
             zlimbyan          = [-1,6];
             varexp = 0.5;
     
-        case 'number_vox'
+        case 'number_vox2d2d'
             % Prepare data and defaults
             % now the data will not come from pRF fits. We will just generate
             % 2D gaussians randomly, and one group will have 10% of voxels
@@ -141,7 +137,8 @@ for na=1:length(an_types)
                     f = fnames{nf};
                     switch f
                         case {'vt','session','name'}
-                            disp(f)
+                            % disp(f)
+                            continue
                         otherwise
                             ttd = tmpData.(f);
                             tmpData.(f) = ttd(rndInd);
@@ -161,11 +158,63 @@ for na=1:length(an_types)
             list_rmDescripts  = {'2D','3D'};
             list_dtNames      = {'2D','3D'};
             list_rmNames      = {'2D','3D'};
-            titlestring       = 'Nvoxels';
-            fnamestring       = 'Nvoxels';
+            titlestring       = 'Nvoxels2d2d';
+            fnamestring       = 'Nvoxels2d2d';
             zlimbyan          = [-.5,.5];
             varexp = 0.5;        
     
+        case 'number_vox2d3d'
+            % Prepare data and defaults
+            % now the data will not come from pRF fits. We will just generate
+            % 2D gaussians randomly, and one group will have 10% of voxels
+            % than the other one
+            % 1st test: take just the modeled vertices, and take random 10%
+            % 2nd test: do a proper randomization and create both datasets from
+            % gaussians from scratch
+            % TEST 1
+            load(fullfile(prf2d3dRP,'DATA','mats','rmroicell_mini_vol_surf_models.mat'))
+            % second column is voxels, substitute by a subset of vertices in
+            % the first column
+            % substitute for by funs...
+            % decimation_factor = 10;
+            rng(12345, 'twister')
+            rmroiCellSIM = rmroiCell;
+            for ns=1:30; for nr=1:3
+                tmpData = rmroiCell{ns, nr, 1};
+                tmpData2 = rmroiCell{ns, nr, 2};
+                Nvertex = length(tmpData.x0);
+                Nvertex2 = length(tmpData2.x0);
+                rndInd = randi([1,Nvertex],[Nvertex2,1]);
+                for nf=1:length(fieldnames(tmpData))
+                    fnames = fieldnames(tmpData);
+                    f = fnames{nf};
+                    switch f
+                        case {'vt','session','name'}
+                            % disp(f)
+                            continue
+                        otherwise
+                            ttd = tmpData.(f);
+                            tmpData.(f) = ttd(rndInd);
+                    end
+                end
+                rmroiCellSIM{ns, nr, 1} = tmpData;
+            end;end
+    
+    
+            rmroiCell = rmroiCellSIM;
+    
+    
+            list_subInds      = 1:size(rmroiCell,1);
+            % after seeing indiv plots removed 25 and 26
+            % list_subInds      = [1:24,27:28]; 
+            list_roiNames     = {'V1','V2','V3'};
+            list_rmDescripts  = {'2D','3D'};
+            list_dtNames      = {'2D','3D'};
+            list_rmNames      = {'2D','3D'};
+            titlestring       = 'Nvoxels2d3d';
+            fnamestring       = 'Nvoxels2d3d';
+            zlimbyan          = [-1,6];
+            varexp = 0.5;        
         case 'hrlr'
             load(fullfile(prf2d3dRP,'DATA','rmroicell_HRLR.mat'))
             
