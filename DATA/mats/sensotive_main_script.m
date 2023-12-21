@@ -90,6 +90,9 @@ cr.defaults.covfig.vfc.list_rmNames = list_rmNames;
 
 
 varexp = 0.05;
+list_dtNames  = {'English','Hebrew','Checkers'};
+titlestring       = 'WHvsCB';
+data_select =[3,2];
 
 for na=1:length(an_types)
     an = an_types{na}
@@ -136,23 +139,23 @@ for na=1:length(an_types)
                  'WangAtlas_V3A_right'
                  'WangAtlas_IPS0_right'
                  'WangAtlas_IPS1_right'};
-            list_dtNames  = {'English','Hebrew','Checkers'};
+            
             list_rmNames  = list_dtNames;
             list_rmDescripts  = list_dtNames;
 
-            titlestring       = 'WEvsCB';
+            
             fnamestring       = titlestring;
             zlimbyan          = [-1,2];
 
 
             % 
             roi_ind = [4:8, 9:11];
-            rmroiCell_WC     = rmroiCell(:,roi_ind,[3,1]);
+            rmroiCell_WC     = rmroiCell(:,roi_ind,data_select);
             % rmroiCell_WC     = flip(rmroiCell_WC,3);
             list_roiNames16  = list_roiNames(roi_ind);
             % list_rmDescripts = {'WordsSighted', 'WordBlind'};
             % list_rmDescripts = {'CheckersSighted', 'CheckersBlind'};
-            list_rmDescripts16 = list_rmDescripts([1,3]);
+            list_rmDescripts16 = list_rmDescripts(flip(data_select));
             % list_subInds = 2:3;
             
             % Obtain equally thresholded voxels to scatterplot
@@ -208,23 +211,22 @@ for na=1:length(an_types)
                  'WangAtlas_V3A_right'
                  'WangAtlas_IPS0_right'
                  'WangAtlas_IPS1_right'};
-            list_dtNames  = {'English','Hebrew','Checkers'};
             list_rmNames  = list_dtNames;
             list_rmDescripts  = list_dtNames;
             
             
-            titlestring       = 'WEvsCB';
+
             fnamestring       = titlestring;
             zlimbyan          = [-1,2];
 
             % 
             roi_ind = [4:8, 9:11];
-            rmroiCell_WC     = rmroiCell(:,roi_ind,[3,1]);
+            rmroiCell_WC     = rmroiCell(:,roi_ind,data_select);
             % rmroiCell_WC     = flip(rmroiCell_WC,3);
             list_roiNames16  = list_roiNames(roi_ind);
             % list_rmDescripts = {'WordsSighted', 'WordBlind'};
             % list_rmDescripts = {'CheckersSighted', 'CheckersBlind'};
-            list_rmDescripts16 = list_rmDescripts([1,3]);
+            list_rmDescripts16 = list_rmDescripts(flip(data_select));
             % list_subInds = 2:3;
             
             % Obtain equally thresholded voxels to scatterplot
