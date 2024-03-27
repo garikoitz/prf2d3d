@@ -1,16 +1,3 @@
-
-%{
-TODO august 24 2023
-   OK: add 3 circles: radius 3/3 8, 2/3 8, 1/3 8
-   OK: align text to 3D plot
-run number of vox:
-    -- rught now we are using decimation_factor=10
-    -- we want to have in 2D the same amount that we have in 3D, per every subject
-re-run all 4 plots with the new drawing shit
-%}
-
-
-
 %%
 clear all; close all; clc;
 
@@ -20,8 +7,8 @@ clear all; close all; clc;
 % an = 'hrlr';
 % an = 'upsample'; % upsample voxels from 2iso to 1iso to see if goes foveal due to the curve
 
-an_types = {'2d3d','2d3dmodel','number_vox2d2d','number_vox2d3d','upsample'};
-an_types = {'number_vox2d3d'};
+% an_types = {'2d3d','2d3dmodel','number_vox2d2d','number_vox2d3d','upsample'};
+an_types = {'upsample','number_vox2d2d'};
 recalculate = false;
 
 for na=1:length(an_types)
@@ -39,10 +26,10 @@ for na=1:length(an_types)
     cr.bk = bookKeeping(cr);
     
     switch an
-        case '2d3d'
+        case '2d3d'  % Fig 2
             % Prepare data and defaults
             % load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
-            load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_new.mat')) % This is in the abstract
+            load(fullfile(prf2d3dRP,'DATA','mats','rmroicell_mini_vol_surf_new.mat')) % This is in the abstract
             
             list_subInds      = 1:size(rmroiCell,1);
             % after seeing indiv plots removed 25 and 26
@@ -57,9 +44,9 @@ for na=1:length(an_types)
             varexp = 0.2;
     
     
-        case '2d3dmodel'
+        case '2d3dmodel'  % Fig 3A
             % Prepare data and defaults
-            load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_models.mat'))
+            load(fullfile(prf2d3dRP,'DATA','mats', 'rmroicell_mini_vol_surf_models.mat'))
             
     
             % Compare first differences in the results
@@ -110,7 +97,7 @@ for na=1:length(an_types)
             zlimbyan          = [-1,6];
             varexp = 0.5;
     
-        case 'number_vox2d2d'
+        case 'number_vox2d2d'  % Fig 3B
             % Prepare data and defaults
             % now the data will not come from pRF fits. We will just generate
             % 2D gaussians randomly, and one group will have 10% of voxels
@@ -119,7 +106,7 @@ for na=1:length(an_types)
             % 2nd test: do a proper randomization and create both datasets from
             % gaussians from scratch
             % TEST 1
-            load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_models.mat'))
+            load(fullfile(prf2d3dRP,'DATA','mats', 'rmroicell_mini_vol_surf_models.mat'))
             % second column is voxels, substitute by a subset of vertices in
             % the first column
             % substitute for by funs...
@@ -160,10 +147,10 @@ for na=1:length(an_types)
             list_rmNames      = {'2D','3D'};
             titlestring       = 'Nvoxels2d2d';
             fnamestring       = 'Nvoxels2d2d';
-            zlimbyan          = [-.5,.5];
+            zlimbyan          = [-1,6];
             varexp = 0.5;        
     
-        case 'number_vox2d3d'
+        case 'number_vox2d3d'  % Fig 3C
             % Prepare data and defaults
             % now the data will not come from pRF fits. We will just generate
             % 2D gaussians randomly, and one group will have 10% of voxels
@@ -215,8 +202,22 @@ for na=1:length(an_types)
             fnamestring       = 'Nvoxels2d3d';
             zlimbyan          = [-1,6];
             varexp = 0.5;        
-        case 'hrlr'
-            load(fullfile(prf2d3dRP,'DATA','rmroicell_HRLR.mat'))
+        case 'upsample'  % Fig 3D
+            load(fullfile(prf2d3dRP,'DATA','mats', 'rmroicell_mini_vol_surf_upsample.mat'))
+            
+            list_subInds      = 1:size(rmroiCell,1);
+            list_roiNames     = {'V1','V2','V3'};
+             %tasks = ['barHR','barLR']
+            list_rmDescripts  = {'HR','LR'};
+            list_dtNames      = {'HR','LR'};
+            list_rmNames      = {'HR','LR'};
+            titlestring       = 'HR - LR';
+            fnamestring       = 'upsample';
+            zlimbyan          = [-1, 6];
+            varexp            = 0.2;
+            rmroiCell         = flip(rmroiCell,3);
+        case 'hrlr'  % Not in the paper
+            load(fullfile(prf2d3dRP,'DATA','mats', 'rmroicell_HRLR.mat'))
             
             list_subInds      = 1:size(rmroiCell,1);
             list_roiNames     = {'V1','V2','V3'};
@@ -229,21 +230,8 @@ for na=1:length(an_types)
             zlimbyan          = [-2.5, 1];
             varexp = 0.2;
     
-        case 'upsample'
-            load(fullfile(prf2d3dRP,'DATA','rmroicell_mini_vol_surf_upsample.mat'))
-            
-            list_subInds      = 1:size(rmroiCell,1);
-            list_roiNames     = {'V1','V2','V3'};
-             %tasks = ['barHR','barLR']
-            list_rmDescripts  = {'HR','LR'};
-            list_dtNames      = {'HR','LR'};
-            list_rmNames      = {'HR','LR'};
-            titlestring       = 'HR - LR';
-            fnamestring       = 'upsample';
-            zlimbyan          = [-1, 5];
-            varexp            = 0.2;
-            rmroiCell         = flip(rmroiCell,3);
-    
+
+
         otherwise
             error('Analysis case not defined')
     end
@@ -270,8 +258,8 @@ for na=1:length(an_types)
     
     %% Launch the function
        
-    data_fname_mean = fullfile(cr.dirs.DATA,['RF_mean_' an '_.mat']);
-    data_fname_individuals = fullfile(cr.dirs.DATA,['RF_individuals_' an '_.mat']);
+    data_fname_mean = fullfile(cr.dirs.DATA,'mats',['RF_mean_' an '_.mat']);
+    data_fname_individuals = fullfile(cr.dirs.DATA,'mats',['RF_individuals_' an '_.mat']);
     
     if recalculate || ~isfile(data_fname_mean) || ~isfile(data_fname_individuals)
         % fname = 'CoverageBoot_varexp02_';%'Fig1_'; % '' for not saving
