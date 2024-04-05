@@ -1,5 +1,6 @@
 %%
 clear all; close all; clc;
+rng(12345, 'twister')
 
 % an = '2d3d';
 % an = '2d3dmodel';
@@ -8,11 +9,32 @@ clear all; close all; clc;
 % an = 'upsample'; % upsample voxels from 2iso to 1iso to see if goes foveal due to the curve
 
 % an_types = {'2d3d','2d3dmodel','number_vox2d2d','number_vox2d3d','upsample'};
-an_types = {'upsample','number_vox2d2d'};
-recalculate = false;
+an_types = {'upsample'};  % ,'number_vox2d2d'};
 
+recalculate = false;
+do_plots = true;
+size_sim = false;
+size_range = .1:.01:1;
+if size_sim
+    an_types = {};
+    for ii=size_range
+        an_types = [an_types, {['2d3d-' num2str(ii)]}];
+    end
+end
+size_factor = 1;
+size_factor_str = '';
+% Make N by 2 matrix of fieldname + value type
+variable_names_types = [["analysis", "string"]; ...
+            ["size_factor", "double"]; ...
+            ["roi_name", "string"]; ...
+			["max", "double"]; ...
+			["min", "double"]; ];
+% Make table using fieldnames & value types from above
+minmax_vals = table('Size',[0,size(variable_names_types,1)],... 
+	'VariableNames', variable_names_types(:,1),...
+	'VariableTypes', variable_names_types(:,2));
 for na=1:length(an_types)
-    an = an_types{na}
+    an = an_types{na};
 
     
     cr         = struct();
@@ -25,7 +47,7 @@ for na=1:length(an_types)
     cr.dirs.FIGSVG  = fullfile(cr.dirs.FIG,'svg');
     cr.bk = bookKeeping(cr);
     
-    switch an
+    switch strtok(an, '-')
         case '2d3d'  % Fig 2
             % Prepare data and defaults
             % load(fullfile(prf2d3dRP,'DATA','rmroicellOHBM.mat'))
@@ -40,6 +62,13 @@ for na=1:length(an_types)
             list_rmNames      = {'2D','3D'};
             titlestring       = '2D - 3D';
             fnamestring       = '2Dvs3D';
+            size_factor_str   = '';
+            if size_sim
+                [~,size_factor_str] = strtok(an, '-');
+                size_factor = -str2double(size_factor_str);
+                fnamestring       = ['2Dvs3D' size_factor_str];
+            end
+            
             zlimbyan          = [-1,2];
             varexp = 0.2;
     
@@ -257,9 +286,14 @@ for na=1:length(an_types)
     
     
     %% Launch the function
-       
-    data_fname_mean = fullfile(cr.dirs.DATA,'mats',['RF_mean_' an '_.mat']);
-    data_fname_individuals = fullfile(cr.dirs.DATA,'mats',['RF_individuals_' an '_.mat']);
+    mats_folder = 'mats';
+    size_factor_name = "";
+    if size_sim; mats_folder = 'mats_sim'; end
+    
+    data_fname_mean = fullfile(cr.dirs.DATA,mats_folder,['RF_mean_' ...
+                                            an size_factor_str '_.mat']);
+    data_fname_individuals = fullfile(cr.dirs.DATA,mats_folder,...
+                           ['RF_individuals_' an size_factor_str '_.mat']);
     
     if recalculate || ~isfile(data_fname_mean) || ~isfile(data_fname_individuals)
         % fname = 'CoverageBoot_varexp02_';%'Fig1_'; % '' for not saving
@@ -279,7 +313,8 @@ for na=1:length(an_types)
                                               'vers','v01',...
                                               'method', 'avg', ...
                                               'density', false, ... 
-                                              'invisible',true);
+                                              'invisible',true, ...
+                                              'size_factor', size_factor);
         
         save(data_fname_mean, 'RF_mean')
         save(data_fname_individuals, 'RF_individuals')
@@ -290,15 +325,33 @@ for na=1:length(an_types)
     
     %% PLOT THEM FOR V1-3, DO BOOTSTRAPPING AND AVERAGE IT
     grid_size = 128;
+
+    if size_sim % refactor this, we will read it 90 more times than necessary
+        % Read size_factor=1 for 3D data. This will never change
+        data_fname_mean = fullfile(cr.dirs.DATA,mats_folder, ...
+            'RF_mean_2d3d-1-1_.mat');
+        data_fname_individuals = fullfile(cr.dirs.DATA,mats_folder,...
+            'RF_individuals_2d3d-1-1_.mat');
+        S1mean = load(data_fname_mean);
+        S1indiv = load(data_fname_individuals);
+    end
     
     for nr=1:3
-        ALL2d=RF_individuals{nr,1};
-        ALL3d=RF_individuals{nr,2};
+        if ~size_sim
+            ALL2d = RF_individuals{nr,1};
+            ALL3d = RF_individuals{nr,2};
+        else
+            % Read the 2D data with size_factor applied. We have it already
+            ALL2d = RF_individuals{nr,1};
+            % Read the 3D data with size factor of 1
+            ALL3d = S1indiv.RF_individuals{nr,2};
+        end
         
         MVALS = zeros(grid_size,grid_size,50);
         SVALS = zeros(grid_size,grid_size,50);
         DVALS = zeros(grid_size,grid_size,50);
         
+
         for kk=1:50
             % Remove 1 each time and create same plots with the remaining one
             nsubsminus1 = size(ALL2d,3)-1;
@@ -326,151 +379,201 @@ for na=1:length(an_types)
         stdval = mean(SVALS,3);
         Cd     = mean(DVALS,3);
         
+        % Plot values for monitoring
+        fprintf("%s-%s: max: %.3g, min: %.3g\n", ...
+            an, ...
+            list_roiNames{nr}, ...
+            max(Cd(:)), ...
+            min(Cd(:)))
+        % Create a table
+        tmpvals = table('Size',[1,size(variable_names_types,1)],... 
+            'VariableNames', variable_names_types(:,1),...
+            'VariableTypes', variable_names_types(:,2));
+        tmpvals.size_factor = an;
+        tmpvals.roi_name = list_roiNames{nr};
+        tmpvals.min = min(Cd(:));
+        tmpvals.max = max(Cd(:));
+        tmpvals.size_factor=size_factor;
     
-        % PLOT
-        xdeg = 8; ydeg = 8;
-        mrvNewGraphWin(['bootstraps' fnamestring 'FOV'],'wide',true);
-        subplot(1,2,1)
-        im1 = imagesc(Cd);axis equal;colormap(colors_p);colorbar;grid; hold on
+        minmax_vals = [minmax_vals;tmpvals];
+
+
+        if do_plots
+            % PLOT
+            xdeg = 8; ydeg = 8;
+            mrvNewGraphWin(['bootstraps' fnamestring 'FOV'],'wide',true);
+            subplot(1,2,1)
+            im1 = imagesc(Cd);axis equal;colormap(colors_p);colorbar;grid; hold on
+            
+            title([list_roiNames{nr} char(". d': mean 50 bootstraps ") titlestring])
+            xlim([1,grid_size]);ylim([1,grid_size])
+            xticks([1,grid_size/2,grid_size]); yticks([1,grid_size/2,grid_size])
+            clim(zlimbyan)
+            % Create the circles
+            hold on
+            C  = repmat([grid_size/2,grid_size/2],[3,1]);
+            radii = [(grid_size/2)*(3/3), (grid_size/2)*(2/3), (grid_size/2)*(1/3)]';
+            vc = viscircles(C,radii,'color',[0.5 0.5 0.5],'LineStyle','--', ...
+                'LineWidth',1,'EnhanceVisibility', false);
+            xticklabels([-xdeg,0,xdeg]); yticklabels([-ydeg,0,ydeg])
+            xlabel('X (degree)'); ylabel('Y (degree)')
         
-        title([list_roiNames{nr} char(". d': mean 50 bootstraps ") titlestring])
-        xlim([1,grid_size]);ylim([1,grid_size])
-        xticks([1,grid_size/2,grid_size]); yticks([1,grid_size/2,grid_size])
-        clim(zlimbyan)
-        % Create the circles
-        hold on
-        C  = repmat([grid_size/2,grid_size/2],[3,1]);
-        radii = [(grid_size/2)*(3/3), (grid_size/2)*(2/3), (grid_size/2)*(1/3)]';
-        vc = viscircles(C,radii,'color',[0.5 0.5 0.5],'LineStyle','--', 'LineWidth',1,'EnhanceVisibility', false);
-        xticklabels([-xdeg,0,xdeg]); yticklabels([-ydeg,0,ydeg])
-        xlabel('X (degree)'); ylabel('Y (degree)')
-    
-        im1.Parent.FontSize = 18;
-        % im1.Parent.XColor = [0.5, 0.5, 0.5]; 
-        % im1.Parent.YColor = [0.5, 0.5, 0.5]; 
-        im1.Parent.GridAlpha = 0.5;  % Make grid lines less transparent.
-        im1.Parent.GridColor = [0.5, 0.5, 0.5]; 
-        im1.Parent.LineWidth = 0.5;
+            im1.Parent.FontSize = 18;
+            % im1.Parent.XColor = [0.5, 0.5, 0.5]; 
+            % im1.Parent.YColor = [0.5, 0.5, 0.5]; 
+            im1.Parent.GridAlpha = 0.5;  % Make grid lines less transparent.
+            im1.Parent.GridColor = [0.5, 0.5, 0.5]; 
+            im1.Parent.LineWidth = 0.5;
+            
+            
+            subplot(1,2,2)
+            [X,Y] = meshgrid(1:grid_size,1:grid_size);
+            XX = ((X-(grid_size/2))/(grid_size/2))*xdeg;
+            YY = ((Y-(grid_size/2))/(grid_size/2))*ydeg;
+            YY = flipud(YY);
+            CdC = Cd;
+            % Make concentring rings
+            [x,y] = circlePoints(0.01);
+            % 3/3 ring
+            xx = round((128*x + 128)/2);
+            yy = round((128*y + 128)/2);
+            xx(xx==0)=1;
+            yy(yy==0)=1;
+            for ii=1:128; CdC(xx(ii),yy(ii)) = 0; end
+            % 2/3 ring
+            xx = round(((2/3)*128*x + 128)/2);
+            yy = round(((2/3)*128*y + 128)/2);
+            xx(xx==0)=1;
+            yy(yy==0)=1;
+            for ii=1:128; CdC(xx(ii),yy(ii)) = 0; end
+            % 1/3 ring
+            xx = round(((1/3)*128*x + 128)/2);
+            yy = round(((1/3)*128*y + 128)/2);
+            xx(xx==0)=1;
+            yy(yy==0)=1;
+            for ii=1:128; CdC(xx(ii),yy(ii)) = 0; end
+        
+            im2 = surf(XX,YY,Cd,CdC);
+        
+            xlabel('X (degree)'); ylabel('Y (degree)')
+            zlabel("Cohen's d")
+            xlim([-xdeg,xdeg])
+            ylim([-ydeg,ydeg])
+            zlim(zlimbyan)
+            xticks([-xdeg,-(xdeg/2),0,(xdeg/2),xdeg])
+            yticks([-ydeg,-(ydeg/2),0,(ydeg/2),ydeg])
+            xticklabels({'-8','-4','0','4','8'})
+            yticklabels({''})
+            % viscircles(C,radii,'color',[0.5 0.5 0.5],'LineStyle','-', 'LineWidth',.75);
+            im2.Parent.FontSize = 18;    
+            % im2.Parent.XColor = [0.5, 0.5, 0.5]; 
+            % im2.Parent.YColor = [0.5, 0.5, 0.5]; 
+            im1.Parent.GridAlpha = 0.5;  % Make grid lines less transparent.
+            im1.Parent.GridColor = [0.5, 0.5, 0.5]; 
+            im1.Parent.LineWidth = 0.5;
+        
+            % Control de orientation
+            azimuth = -45;
+            elevation = 35.264;
+            % Isometric view, c. f. https://en.wikipedia.org/wiki/Isometric_projection
+            view(im2.Parent,azimuth,elevation);
+            unitx = [1;0;0];
+            unity = [0;1;0];
+            unitz = [0;0;1];
+            projectedunitx = rotx(elevation) * rotz(-azimuth) * unitx;
+            projectedunity = rotx(elevation) * rotz(-azimuth) * unity;
+            xlabelangle = atan2d(projectedunitx(3),projectedunitx(1));
+            ylabelangle = -(180 - atan2d(projectedunity(3),projectedunity(1)));
+            xlabelhandle = im2.Parent().XLabel;
+            ylabelhandle = im2.Parent().YLabel;
+            xlabelhandle.Rotation = xlabelangle;
+            ylabelhandle.Rotation = ylabelangle;
+            xlimits = xlim(im2.Parent);
+            ylimits = ylim(im2.Parent);
+            zlimits = zlim(im2.Parent);
+            xmean = mean(xlimits);
+            ymean = mean(ylimits);
+            xbottom = xlimits(1);
+            ybottom = ylimits(1);
+            zbottom = zlimits(1);
+            xlabelhandle.Position = [xmean (ybottom-1) (zbottom-1)];
+            ylabelhandle.Position = [xbottom ymean zbottom];
+            axis equal
+            
+            fname = ['FOV_Comparisons_ROI-' list_roiNames{nr} '_' ...
+                fnamestring '_vfc.method_avg_varexp-' num2str(varexp)];
+            set(gca, 'DefaultFigureRenderer', 'painters');
         
         
-        subplot(1,2,2)
-        [X,Y] = meshgrid(1:grid_size,1:grid_size);
-        XX = ((X-(grid_size/2))/(grid_size/2))*xdeg;
-        YY = ((Y-(grid_size/2))/(grid_size/2))*ydeg;
-        YY = flipud(YY);
-        CdC = Cd;
-        % Make concentring rings
-        [x,y] = circlePoints(0.01);
-        % 3/3 ring
-        xx = round((128*x + 128)/2);
-        yy = round((128*y + 128)/2);
-        xx(xx==0)=1;
-        yy(yy==0)=1;
-        for ii=1:128; CdC(xx(ii),yy(ii)) = 0; end
-        % 2/3 ring
-        xx = round(((2/3)*128*x + 128)/2);
-        yy = round(((2/3)*128*y + 128)/2);
-        xx(xx==0)=1;
-        yy(yy==0)=1;
-        for ii=1:128; CdC(xx(ii),yy(ii)) = 0; end
-        % 1/3 ring
-        xx = round(((1/3)*128*x + 128)/2);
-        yy = round(((1/3)*128*y + 128)/2);
-        xx(xx==0)=1;
-        yy(yy==0)=1;
-        for ii=1:128; CdC(xx(ii),yy(ii)) = 0; end
-    
-        im2 = surf(XX,YY,Cd,CdC);
-    
-        xlabel('X (degree)'); ylabel('Y (degree)')
-        zlabel("Cohen's d")
-        xlim([-xdeg,xdeg])
-        ylim([-ydeg,ydeg])
-        zlim(zlimbyan)
-        xticks([-xdeg,-(xdeg/2),0,(xdeg/2),xdeg])
-        yticks([-ydeg,-(ydeg/2),0,(ydeg/2),ydeg])
-        xticklabels({'-8','-4','0','4','8'})
-        yticklabels({''})
-        % viscircles(C,radii,'color',[0.5 0.5 0.5],'LineStyle','-', 'LineWidth',.75);
-        im2.Parent.FontSize = 18;    
-        % im2.Parent.XColor = [0.5, 0.5, 0.5]; 
-        % im2.Parent.YColor = [0.5, 0.5, 0.5]; 
-        im1.Parent.GridAlpha = 0.5;  % Make grid lines less transparent.
-        im1.Parent.GridColor = [0.5, 0.5, 0.5]; 
-        im1.Parent.LineWidth = 0.5;
-    
-        % Control de orientation
-        azimuth = -45;
-        elevation = 35.264;
-        % Isometric view, c. f. https://en.wikipedia.org/wiki/Isometric_projection
-        view(im2.Parent,azimuth,elevation);
-        unitx = [1;0;0];
-        unity = [0;1;0];
-        unitz = [0;0;1];
-        projectedunitx = rotx(elevation) * rotz(-azimuth) * unitx;
-        projectedunity = rotx(elevation) * rotz(-azimuth) * unity;
-        xlabelangle = atan2d(projectedunitx(3),projectedunitx(1));
-        ylabelangle = -(180 - atan2d(projectedunity(3),projectedunity(1)));
-        xlabelhandle = im2.Parent().XLabel;
-        ylabelhandle = im2.Parent().YLabel;
-        xlabelhandle.Rotation = xlabelangle;
-        ylabelhandle.Rotation = ylabelangle;
-        xlimits = xlim(im2.Parent);
-        ylimits = ylim(im2.Parent);
-        zlimits = zlim(im2.Parent);
-        xmean = mean(xlimits);
-        ymean = mean(ylimits);
-        xbottom = xlimits(1);
-        ybottom = ylimits(1);
-        zbottom = zlimits(1);
-        xlabelhandle.Position = [xmean (ybottom-1) (zbottom-1)];
-        ylabelhandle.Position = [xbottom ymean zbottom];
-        axis equal
         
-        fname = ['FOV_Comparisons_ROI-' list_roiNames{nr} '_' fnamestring '_vfc.method_avg_varexp-' num2str(varexp)];
-        set(0, 'DefaultFigureRenderer', 'painters');
-    
-    
-    
-        saveas(gcf, fullfile(cr.dirs.FIGPNG, [fname '.png']), 'png')
-        saveas(gcf, fullfile(cr.dirs.FIGSVG,[fname '.svg']), 'svg')
+            saveas(gcf, fullfile(cr.dirs.FIGPNG, [fname '.png']), 'png')
+            saveas(gcf, fullfile(cr.dirs.FIGSVG,[fname '.svg']),'svg')
+        end
     end
+
+
 end
 
+if size_sim
+    writetable(minmax_vals, fullfile(cr.dirs.DATA, 'minmax_vals.csv'))
+    
+    % minmax_vals = readtable(fullfile(cr.dirs.DATA, 'minmax_vals.csv'))
+    sfactor = minmax_vals.size_factor(minmax_vals.roi_name=="V1");
+    V1max = minmax_vals.max(minmax_vals.roi_name=="V1");
+    V1min = minmax_vals.min(minmax_vals.roi_name=="V1");
+    V2max = minmax_vals.max(minmax_vals.roi_name=="V2");
+    V2min = minmax_vals.min(minmax_vals.roi_name=="V2");
+    V3max = minmax_vals.max(minmax_vals.roi_name=="V3");
+    V3min = minmax_vals.min(minmax_vals.roi_name=="V3");
+    
+    figure(55)
+    plot(sfactor, V1max, 'b-');hold on
+    plot(sfactor, V2max, 'r-');
+    plot(sfactor, V3max, 'g-');
+    yline(0)
+    set(gca, 'XMinorGrid', 'on', 'YMinorGrid', 'off')
+    legend({"V1","V2","V3"})
+    xlim([0.5,1])
+    
+    title("comparison size_factor and max difference value")
+    xlabel("size factor")
+    ylabel("max of cohen's d differences")
+end
 
-
-%% Individual plots
+%% Individual plots: NOTE: do not use if size_sim=true
 %{
-for nr=1:3
-    ALL2d=RF_individuals{nr,1};
-    ALL3d=RF_individuals{nr,2};
-
-    mrvNewGraphWin(['CrossVal' fnamestring 'FOV']);
-    ha = tight_subplot(4,ceil(size(ALL3d,3)/4),[.03 .03],[.1 .01],[.01 .01]);
-    subnames = 1:size(ALL3d,3);
-    ve = varexp;
-    for nn=1:size(ALL2d,3)
-        all2d = ALL2d(:,:,nn);
-        all3d = ALL3d(:,:,nn);
-        axes(ha(nn));
-        imagesc(all2d-all3d);axis equal;colormap(jet);colorbar;grid
-        caxis([-.1,.1])
-        % title(sprintf('Sub ind %i',nn))
-        title(['ROI-' list_roiNames{nr} '_' fnamestring '_sub-' num2str(subnames(nn))])
-        xlim([1,128]);ylim([1,128])
-        xticks([1,64,128]); yticks([1,64,128])
-        xticklabels([-xdeg,0,xdeg]); yticklabels([-ydeg,0,ydeg])
+if ~size_sim
+    for nr=1:3
+        ALL2d=RF_individuals{nr,1};
+        ALL3d=RF_individuals{nr,2};
     
+        mrvNewGraphWin(['CrossVal' fnamestring 'FOV']);
+        ha = tight_subplot(4,ceil(size(ALL3d,3)/4),[.03 .03],[.1 .01],[.01 .01]);
+        subnames = 1:size(ALL3d,3);
+        ve = varexp;
+        for nn=1:size(ALL2d,3)
+            all2d = ALL2d(:,:,nn);
+            all3d = ALL3d(:,:,nn);
+            axes(ha(nn));
+            imagesc(all2d-all3d);axis equal;colormap(jet);colorbar;grid
+            caxis([-.1,.1])
+            % title(sprintf('Sub ind %i',nn))
+            title(['ROI-' list_roiNames{nr} '_' fnamestring '_sub-' num2str(subnames(nn))])
+            xlim([1,128]);ylim([1,128])
+            xticks([1,64,128]); yticks([1,64,128])
+            xticklabels([-xdeg,0,xdeg]); yticklabels([-ydeg,0,ydeg])
+        
+        end
+        
+        ha    = xlabel('Degs');
+        ha(1) = ylabel('Degs');
+        titlefile  = ['IndividualSubject\_' fnamestring '\_ROI-' list_roiNames{nr} ...
+            '\_N-' num2str(size(ALL2d,3)) '\_VE-' num2str(100*ve) ];
+        saveas(gcf, fullfile(cr.dirs.FIGPNG,[titlefile '.png']), 'png')
+        saveas(gcf, fullfile(cr.dirs.FIGSVG,[titlefile '.svg']), 'svg')
     end
-    
-    ha    = xlabel('Degs');
-    ha(1) = ylabel('Degs');
-    titlefile  = ['IndividualSubject\_' fnamestring '\_ROI-' list_roiNames{nr} ...
-        '\_N-' num2str(size(ALL2d,3)) '\_VE-' num2str(100*ve) ];
-    saveas(gcf, fullfile(cr.dirs.FIGPNG,[titlefile '.png']), 'png')
-    saveas(gcf, fullfile(cr.dirs.FIGSVG,[titlefile '.svg']), 'svg')
+    close all
 end
-close all
 %}
 
 
